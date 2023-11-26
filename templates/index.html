@@ -1,0 +1,121 @@
+<meta charset="UTF-8"/>
+
+<style>
+    .wrapper {
+        min-height: 100vh;
+        overflow: hidden;
+    }
+    .row {
+        display: flex;
+        align-items: flex-start;
+        margin: 10px -15px;
+    }
+    .row > * {
+        width: 50%;
+        margin: 10px 15px;
+        padding: 10px;
+        display: block;
+        word-wrap: break-word;
+        box-shadow: 0 0 15px 3px rgb(200,200,200,0.3);
+        border-radius: 10px;
+    }
+    .pre-line {
+        white-space: pre;
+    }
+</style>
+
+<div class="wrapper">
+    <div class="row">
+        
+        <form action="" method="post" id="add-form">
+            <h3>Форма добавления шаблонов</h3>
+            <input type="text" name="template_name" placeholder="Название формы"/>
+            <button id="add-form-elements">Добавить поля</button>
+<!--Добавляем поля для ввода названия и типа поля в шаблоне              -->
+            <div id="form-elements"></div>
+            <button id="add-template">Добавить шаблон</button>
+        </form>
+        
+        <form action="" method="post" id="search-form">
+            <h3>Форма поиска шаблонов</h3>
+            <button id="add-search-form-elements">Добавить поля для поиска</button>
+<!--Добавляем поля для ввода названия и типа поля в шаблоне              -->
+            <div id="form-search-elements"></div>
+            <button id="search-template">Искать шаблон</button>
+        </form>
+        
+    </div>
+    <div class="row">
+        <div class="pre-line" id="db-structure"></div>
+        <div id="search-form-result"></div>
+    </div>
+</div>
+
+<script>
+function bindFormsAction(button, form, uri) {
+    
+    document.querySelector(button).addEventListener('click', function(e) {
+
+        e.preventDefault();
+
+        var data = new FormData(document.querySelector(form));
+
+        fetch(
+            uri,
+            {
+                method: 'post',
+                body: data
+            }
+        ).then((response) => response.text()).then((text) => {
+            if (uri == '/add_form') {
+                getDBStructure();
+            } else {
+                showSearchResults(text);
+            }
+        });
+    });
+}
+    
+bindFormsAction('#add-template', '#add-form', '/add_form');
+bindFormsAction('#search-template', '#search-form', '/get_form');
+    
+function bindInputsAdd(button, selector, placeholder) {
+    
+    document.querySelector(button).addEventListener('click', function(e) {
+
+        e.preventDefault();
+    // генерим случайное число для имён полей для ввода    
+        var rand_name = generateRandName(),
+            html = '<div><input type="text" name="name_' + rand_name + '" placeholder="Название поля"/>'
+                + '<input type="text" name="type_' + rand_name + '" placeholder="' + placeholder + ' поля"/></div>';
+
+        document.querySelector(selector).innerHTML += html;
+    });
+}
+    
+bindInputsAdd('#add-form-elements', '#form-elements', 'Тип');
+bindInputsAdd('#add-search-form-elements', '#form-search-elements', 'Значение');
+    
+function showSearchResults(result) {
+    document.querySelector('#search-form-result').innerHTML = JSON.stringify(result, undefined, 2);
+}
+    
+function getDBStructure() {
+    fetch('/db_structure').then((response) => response.json()).then((text) => {
+        document.querySelector('#db-structure').innerHTML = '<h3>Структура БД</h3>' + JSON.stringify(text, undefined, 2);
+    });
+}
+    
+getDBStructure();
+    
+function generateRandName() {
+    
+    var name = Math.random().toString().substr(4, 5);
+    
+    while (document.querySelector('input[name="name_' + name + '"]')) {
+        name = Math.random().toString().substr(4, 5);
+    }
+    
+    return name;
+}
+</script>
